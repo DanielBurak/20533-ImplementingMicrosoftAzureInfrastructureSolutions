@@ -3,8 +3,24 @@ Login-AzureRmAccount
 Show-SubscriptionARM
 
 $resourceGroupName = '20533C0401-LabRG'
+$saPrefix = 'sa20533c04l'
+$saType = 'Standard_LRS'
+
+$resourceGroup = Get-AzureRmResourceGroup -Name $resourceGroupName
 
 $storageAccount = Get-AzureRmStorageAccount -ResourceGroupName $resourceGroupName
+If (!($storageAccount)) {
+    $uniqueNumber = (Get-Date).Ticks.ToString().Substring(8)
+    $saName = $saPrefix + $uniqueNumber 
+    If ((Get-AzureRmStorageAccountNameAvailability -Name $saName).NameAvailable -ne $True) { 
+        Do { 
+            $uniqueNumber = (Get-Date).Ticks.ToString().Substring(8)
+            $saName = $saPrefix + $uniqueNumber
+        } Until ((Get-AzureRmStorageAccountNameAvailability -Name $saName).NameAvailable -eq $True)
+    } 
+    $storageAccount = New-AzureRmStorageAccount -ResourceGroupName $resourceGroupname -Name $saName -Type $saType -Location $resourceGroup.Location
+}
+
 $storageAccountKey = (Get-AzureRmStorageAccountKey -ResourceGroupName $resourceGroupName -Name $storageAccount.StorageAccountName)[0].Value
 
 # we are using default container 
